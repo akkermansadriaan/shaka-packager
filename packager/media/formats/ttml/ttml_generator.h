@@ -38,10 +38,12 @@ class TtmlGenerator {
   bool AddSampleToXml(const TextSample& sample,
                       xml::XmlNode* body,
                       xml::XmlNode* metadata,
+                      xml::XmlNode* layout,
                       size_t* image_count) const;
   bool ConvertFragmentToXml(const TextFragment& fragment,
                             xml::XmlNode* parent,
                             xml::XmlNode* metadata,
+                            xml::XmlNode* layout,
                             size_t* image_count) const;
 
   std::list<TextSample> samples_;

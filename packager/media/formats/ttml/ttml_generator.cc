@@ -91,10 +91,11 @@ bool TtmlGenerator::Dump(std::string* result) const {
 
   size_t image_count = 0;
   xml::XmlNode metadata("metadata");
+  xml::XmlNode layout("layout");
   xml::XmlNode body("body");
   xml::XmlNode div("div");
   for (const auto& sample : samples_) {
-    RCHECK(AddSampleToXml(sample, &div, &metadata, &image_count));
+    RCHECK(AddSampleToXml(sample, &div, &metadata, &layout, &image_count));
   }
   RCHECK(body.AddChild(std::move(div)));
   if (image_count > 0) {
@@ -102,6 +103,7 @@ bool TtmlGenerator::Dump(std::string* result) const {
         "xmlns:smpte", "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt"));
     RCHECK(head.AddChild(std::move(metadata)));
   }
+  RCHECK(head.AddChild(std::move(layout)));
   RCHECK(root.AddChild(std::move(head)));
   RCHECK(root.AddChild(std::move(body)));
 
@@ -112,6 +114,7 @@ bool TtmlGenerator::Dump(std::string* result) const {
 bool TtmlGenerator::AddSampleToXml(const TextSample& sample,
                                    xml::XmlNode* body,
                                    xml::XmlNode* metadata,
+                                   xml::XmlNode* layout,
                                    size_t* image_count) const {
   xml::XmlNode p("p");
   RCHECK(p.SetStringAttribute("xml:space", "preserve"));
@@ -119,7 +122,7 @@ bool TtmlGenerator::AddSampleToXml(const TextSample& sample,
                               ToTtmlTime(sample.start_time(), time_scale_)));
   RCHECK(
       p.SetStringAttribute("end", ToTtmlTime(sample.EndTime(), time_scale_)));
-  RCHECK(ConvertFragmentToXml(sample.body(), &p, metadata, image_count));
+  RCHECK(ConvertFragmentToXml(sample.body(), &p, metadata, layout, image_count));
   if (!sample.id().empty())
     RCHECK(p.SetStringAttribute("xml:id", sample.id()));
 
@@ -144,7 +147,7 @@ bool TtmlGenerator::AddSampleToXml(const TextSample& sample,
     RCHECK(region.SetStringAttribute("tts:origin", origin));
     RCHECK(region.SetStringAttribute("tts:extent", extent));
     RCHECK(p.SetStringAttribute("region", id));
-    RCHECK(body->AddChild(std::move(region)));
+    RCHECK(layout->AddChild(std::move(region)));
   } else if (!settings.region.empty()) {
     RCHECK(p.SetStringAttribute("region", settings.region));
   }
@@ -181,6 +184,7 @@ bool TtmlGenerator::AddSampleToXml(const TextSample& sample,
 bool TtmlGenerator::ConvertFragmentToXml(const TextFragment& body,
                                          xml::XmlNode* parent,
                                          xml::XmlNode* metadata,
+                                         xml::XmlNode* layout,
                                          size_t* image_count) const {
   if (body.newline) {
     xml::XmlNode br("br");
@@ -225,7 +229,7 @@ bool TtmlGenerator::ConvertFragmentToXml(const TextFragment& body,
     RCHECK(node->SetStringAttribute("smpte:backgroundImage", "#" + id));
   } else {
     for (const auto& frag : body.sub_fragments) {
-      if (!ConvertFragmentToXml(frag, node, metadata, image_count))
+      if (!ConvertFragmentToXml(frag, node, metadata, layout, image_count))
         return false;
     }
   }
