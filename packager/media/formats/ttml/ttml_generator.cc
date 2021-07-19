@@ -88,7 +88,6 @@ bool TtmlGenerator::Dump(std::string* result) const {
     RCHECK(region.SetStringAttribute("tts:extent", extent));
     RCHECK(head.AddChild(std::move(region)));
   }
-  RCHECK(root.AddChild(std::move(head)));
 
   size_t image_count = 0;
   xml::XmlNode metadata("metadata");
@@ -101,8 +100,9 @@ bool TtmlGenerator::Dump(std::string* result) const {
   if (image_count > 0) {
     RCHECK(root.SetStringAttribute(
         "xmlns:smpte", "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt"));
-    RCHECK(root.AddChild(std::move(metadata)));
+    RCHECK(head.AddChild(std::move(metadata)));
   }
+  RCHECK(root.AddChild(std::move(head)));
   RCHECK(root.AddChild(std::move(body)));
 
   *result = root.ToString(/* comment= */ "");
